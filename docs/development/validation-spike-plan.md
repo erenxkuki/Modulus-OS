@@ -1,7 +1,7 @@
 # MODULUS OS — ADR-0001 Validation Spike Plan
 
-**Status:** Plan written; execution pending a working Linux build host.
-**Last attempted:** 2026-11-06 via RemoteForge (agents offline — see notes).
+**Status:** Plan written; execution attempted via RemoteForge; blocked by environment limitations (see below).
+**Last attempted:** 2026-11-06.
 
 ## Goal
 
@@ -9,7 +9,7 @@ Validate ADR-0001 (Fedora Atomic/Kinoite foundation) before committing. ADR-0001
 
 ## Prerequisites
 
-- A Linux host (Fedora recommended) with `podman`, network access to `quay.io`, and ~20 GB free disk.
+- A Linux host (Fedora recommended) with `podman` (rootful or with user namespaces), network access to `quay.io`, and ~20 GB free disk.
 - For VM boot test: `qemu`/KVM or VirtualBox + `bootc-image-builder`.
 - For NVIDIA+Secure Boot step: a physical machine with NVIDIA GPU and Secure Boot enabled. (VM-only for now per current constraints.)
 
@@ -66,26 +66,45 @@ rpm-ostree rollback
 ```
 Pass criteria: previous working deployment restored.
 
-## RemoteForge attempt (2026-11-06)
+## RemoteForge execution attempt (2026-11-06)
 
-- RemoteForge server brought up locally on Windows (localhost:8787) — OK.
-- Two nodes registered (node_mw4ej28s, node_mw3jfwpt) but both heartbeats are stale (~7–21 h old); agent daemons are NOT running, so jobs stay `pending` indefinitely.
-- A session was successfully requested/approved/claimed (token obtained), but workspace creation and command execution never completed because no live agent picked up the jobs.
-- Conclusion: the spike could NOT be executed remotely in this attempt. The VPS agent must be restarted (or a fresh agent started) before remote execution works.
+### What worked
+- RemoteForge server started locally on Windows (localhost:8787).
+- Agent paired successfully (new node `node_mw4xcnus_3a9540a4efcbfc81`, Ubuntu 24.04 / kernel 6.17.0-1011-oracle, x64).
+- Session auth flow verified end-to-end: request → approve → claim → active token.
+- Workspace creation succeeded.
+- Node has a full toolchain: `apt`, `sudo`, `docker`, `node`, `bash`, compilers, etc.
+- Successfully installed `podman 5.7.0` via apt.
+
+### What blocked execution
+- **Podman cannot run in the container.** `podman build` fails with `cannot clone: Operation not permitted` / `cannot re-exec process` — the container lacks user-namespace capabilities (CAP_SYS_ADMIN / seccomp). This is a nested-container limitation, not a MODULUS issue.
+- **No QEMU** available and cannot be installed usefully without KVM access in the container.
+- **No `rpm-ostree`/`bootc`/`ostree`** on the host, and installing them on Ubuntu is not practical.
+- Conclusion: this VPS is a development container, not a build host. The spike cannot run here.
+
+### Environment findings
+- Host: Ubuntu 24.04 (kernel 6.17.0-1011-oracle), x86_64, containerized.
+- Available: node 20.20.2, docker 29.9.2 (daemon not running), podman 5.7.0 (installed, unusable due to namespaces), sudo (passwordless), apt.
+- Missing: qemu, rpm-ostree, bootc, ostree, podman-with-namespace-support.
+- RemoteForge agent command runner uses `spawn(..., { shell: false })`; commands must be invoked via `/usr/bin/bash -c` or `node` directly. Even `echo` fails as a standalone binary (it's a shell builtin). This is a RemoteForge quirk to remember if used again.
 
 ## What would unblock execution
 
-Option A (recommended): User restarts the agent on the VPS:
-```bash
-npx remote-forge-cli agent run
-```
-Then notify me; I'll re-run Steps 1–3 (build + probe tooling) remotely. Steps 4 and 6 require real hardware / reboot, which a remote agent can do but need careful coordination.
+Option A (recommended): Run on a real Fedora machine (bare metal or VM with KVM) that has:
+- `podman` with working user namespaces (or rootful podman on a real host)
+- Network access to `quay.io`
+- `qemu`/KVM for VM boot testing (optional but needed for Step 3)
+- For Step 4: a physical NVIDIA GPU with Secure Boot enabled
 
-Option B: User runs Steps 1–6 manually on any Linux machine and pastes the results; I'll record pass/fail and update ADR-0001.
+Then execute Steps 1–6 and append results below.
 
-## Recording results
+Option B: Use a cloud instance (e.g., a Fedora VM on a cloud provider) with nested virtualization enabled, and run the steps there.
 
-When executed, append a "Spike results" section here with:
+Option C: Keep the Containerfile as-is and validate it on the next available Fedora build host; the image definition is small and reviewable in the meantime.
+
+## Recording results (to be filled when executed)
+
+When executed, append a "Spike results" section with:
 - Date, host, distro/kernel
-- Step 1–6 pass/fail + evidence (build log, boot screenshot description, nvidia-smi output, rollback verification)
+- Step 1–6 pass/fail + evidence (build log, boot observation, nvidia-smi output, rollback verification)
 - Decision: mark ADR-0001 as Accepted, or revisit with a new ADR.
