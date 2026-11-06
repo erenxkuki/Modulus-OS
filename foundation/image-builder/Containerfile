@@ -1,0 +1,35 @@
+# MODULUS OS — base image definition
+#
+# STATUS: UNTESTED. This Containerfile has not been built or booted.
+# It is a draft for review. Building requires a Linux host with podman/buildah
+# and access to the Fedora Kinoite ostree base image.
+#
+# Base: Fedora Kinoite (KDE Plasma) atomic desktop.
+# See ADR-0001 for the foundation decision and its validation spike.
+
+# syntax=docker/dockerfile:1
+FROM quay.io/fedora-ostree-desktops/kinoite:41
+
+# --- Modulus branding metadata (no functional change) ---
+LABEL org.opencontainers.image.title="MODULUS OS"
+LABEL org.opencontainers.image.description="Modular Linux desktop OS"
+LABEL org.modulus.version="0.0.1-dev"
+
+# --- System packages we layer into the image ---
+# Keep this list minimal. Per ADR-0004, apps go through Flatpak, not here.
+# rpm-ostree in a container build is the Universal Blue pattern.
+RUN rpm-ostree install \
+        plymouth-theme-spinner \
+        fastfetch \
+    && rpm-ostree cleanup -m \
+    && ostree container commit
+
+# --- Modulus branding assets (placeholder paths; add real assets in artwork/) ---
+# COPY artwork/plymouth/modulus /usr/share/plymouth/themes/modulus
+# RUN plymouth-set-default-theme modulus
+
+# --- First-boot / service hooks (to be added in later phases) ---
+# AdaptiveCore, GPUCore, etc. are NOT installed here yet (Phases 3+).
+
+# The image must remain bootable. Do not add untested packages without a build.
+CMD ["/sbin/init"]
