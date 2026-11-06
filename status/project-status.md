@@ -7,6 +7,9 @@
 
 - Phase 0 research report (draft): `research/research-report.md`
 - System architecture + 8 architecture docs
+- D-Bus interface specifications: `docs/architecture/dbus-interfaces.md`
+- Configuration schemas: `docs/architecture/config-schemas.md`
+- Design system tokens: `docs/design/design-system.md`
 - ADR-0001..0004
 - Risk register
 - Phase 1 implementation plan
