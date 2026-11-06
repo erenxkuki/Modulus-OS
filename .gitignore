@@ -1,0 +1,21 @@
+# Build artifacts
+build/
+*.iso
+*.img
+*.qcow2
+
+# OS image work
+work/
+cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Rust
+target/
+
+# Temp
+*.log
+tmp/
