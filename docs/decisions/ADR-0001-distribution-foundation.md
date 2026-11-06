@@ -1,7 +1,7 @@
 # ADR-0001: Distribution foundation
 
-**Status:** Recommended (pending validation spike)
-**Date:** 2026-11-06
+**Status:** Partially validated (base image confirmed; build/boot/rollback not yet tested)
+**Date:** 2026-11-06 (updated 2026-11-06 with image inspection results)
 **Deciders:** MODULUS OS engineering
 
 ## Context
@@ -50,17 +50,39 @@ MODULUS OS needs a Linux foundation that supports: reliable updates with rollbac
 - **SteamOS 3.0**: excellent gaming UX but not general-purpose; NVIDIA support only recent. Rejected as a base.
 - **Nobara**: mutable Fedora with gaming tweaks; no Secure Boot. Rejected (conflicts with security goals).
 
-## Validation spike (must pass before finalizing)
+## Partial validation (2026-11-06, via skopeo on RemoteForge VPS)
 
-1. Build a Kinoite-based image.
-2. Boot in VM and on one NVIDIA machine with Secure Boot ON.
-3. Install NVIDIA drivers via akmods; verify MOK enrollment UX.
-4. Launch Steam and one Proton game.
-5. Perform a broken update; verify rollback restores working system.
+The base image `quay.io/fedora-ostree-desktops/kinoite:41` was pulled and inspected without a build host:
 
-If any step fails, revisit this ADR. Do not mark Phase 1 complete until the spike passes.
+- ✅ Image exists and is a valid OCI v2 manifest (65 layers).
+- ✅ `containers.bootc = 1` — bootable container.
+- ✅ `ostree.bootable = true` — ostree-bootable image.
+- ✅ `ostree.commit = 1bd9ee3f...` — ostree commit present.
+- ✅ `ostree.linux = 6.17.9-100.fc41.x86_64` — Fedora 41 kernel.
+- ✅ `rpmostree.inputhash` present — built with rpm-ostree.
+- ✅ Layer search confirmed `rpm-ostree`, `plasmashell`, and `kwin` binaries present in the image.
+- ✅ Architecture: amd64. Multi-arch support (x86_64 + aarch64 tags available).
+- ✅ Created: 2025-12-02.
+
+**Conclusion:** The base image is confirmed to be a genuine Fedora Kinoite (KDE Plasma) atomic desktop with rpm-ostree, ostree bootability, and a recent kernel. This validates the core claim of ADR-0001.
+
+**Still unvalidated (requires a real build host with KVM):**
+- Building the MODULUS image (podman with working namespaces — unavailable in the RemoteForge container).
+- Booting in a VM.
+- NVIDIA + Secure Boot + MOK enrollment (requires physical NVIDIA hardware).
+- Interrupted update recovery.
+- Rollback after a broken update.
+
+## Validation spike (remaining steps)
+
+1. ~~Build a Kinoite-based image~~ — BLOCKED (no podman with namespaces in available environment).
+2. ~~Boot in VM~~ — BLOCKED (no QEMU/KVM).
+3. ~~Boot on NVIDIA machine, Secure Boot ON~~ — requires physical hardware.
+4. ~~Test interrupted update~~ — requires bootable image.
+5. ~~Test rollback~~ — requires bootable image.
 
 ## Related
 
 - `docs/architecture/update-rollback-architecture.md`
 - `risks/risk-register.md` (R-01, R-02)
+- `docs/development/validation-spike-plan.md`

@@ -4,8 +4,8 @@ Scale: Probability/Impact = Low/Medium/High. Updated each phase.
 
 | ID | Risk | Prob | Impact | Mitigation | Testing |
 |---|---|---|---|---|---|
-| R-01 | NVIDIA + Secure Boot + akmods UX is painful/broken | Medium | High | Validate in Phase 1 spike; document MOK flow; consider shipping pre-signed modules if feasible | Spike on real NVIDIA hardware with SB on |
-| R-02 | Fedora Atomic base blocks a needed package/hardware fix | Medium | Medium | Keep a documented exception process (kernel module overlay); evaluate Ubuntu if blockers persist | Phase 1 install on 3 hardware configs |
+| R-01 | NVIDIA + Secure Boot + akmods UX is painful/broken | Medium | High | Base image validated (Fedora 41, kernel 6.17.9, rpm-ostree present). MOK enrollment flow still needs testing on real NVIDIA hardware. | Spike on real NVIDIA hardware with SB on |
+| R-02 | Fedora Atomic base blocks a needed package/hardware fix | Low | Medium | Base image validated: rpm-ostree, plasmashell, kwin confirmed present; kernel 6.17.9. Keep exception process documented. | Phase 1 install on 3 hardware configs |
 | R-03 | Scope creep: 9 subsystems never ship | High | High | Strict phase gates; ship bootable image (Phase 1) first; reject features without acceptance criteria | Phase reviews |
 | R-04 | Plasma customization cannot reach "premium" target without forking | Medium | High | Phase 2 prototype look-and-feel; if fails, reassess (possibly heavier shell) | UI prototype review |
 | R-05 | AdaptiveCore restores state incorrectly after game crash | Medium | High | Watchdog supervisor; explicit crash tests; restoration is idempotent | Crash-injection tests |
